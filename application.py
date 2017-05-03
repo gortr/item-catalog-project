@@ -141,25 +141,37 @@ def gconnect():
     print "done!"
     return output
 
-# DISCONNECT - Revoke a current user's token and reset their login_session
+# Disconnect Google user
 @app.route('/gdisconnect')
 def gdisconnect():
-    credentials = login_session.get('credentials')
-    if credentials is None:
-        response = make_response(
-            json.dumps('Current user not connected.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    access_token = credentials.access_token
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[0]
-    if result['status'] != '200':
-        response = make_response(
-            json.dumps('Failed to revoke token for given user.'), 400)
+    access_token = login_session['access_token']
+
+    """Ensure to only disconnect a connected user"""
+    if access_token is None:
+        response = make_response(json.dumps('Current user not connected'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
 
+    """Execute HTTP GET request to revoke current token"""
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[0]
+
+    if result['status'] == '200':
+        """Reset the user's session"""
+        del login_session['access_token']
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+
+        flash("You've successfully logged out")
+        return redirect(url_for('showHome'))
+    else:
+        """If the given token was invalid, do the following"""
+        response = make_response(json.dumps("Failed to revoke token for given user"), 400)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 
@@ -225,6 +237,12 @@ def showHome():
         return render_template('publichome.html', categories=categories, items=items)
     else:
         return render_template('home.html', categories=categories, items=items)
+
+# Show user info
+@app.route('/user/<username>/<email>')
+def showUser(username,email):
+    user = session.query(User).filter_by(name=username, email=email).one()
+    return render_template('showUser.html', user=user)
 
 # Add a new category
 @app.route('/catalog/newcategory', methods=['GET','POST'])
@@ -358,7 +376,6 @@ def deleteItem(category_name, item_name):
     category = session.query(Category).filter_by(name=category_name).one()
     deletingItem = session.query(Item).filter_by(name=item_name, category=category).one()
 
-    """Prevent logged-in user to delete item which belongs to other user"""
     if deletingItem.user_id != login_session['user_id']:
         return "<script>function myFunction() {alert('You are not authorized to delete this item. Please create your own item " \
                "in order to delete.');}</script><body onload='myFunction()'>"
@@ -370,6 +387,49 @@ def deleteItem(category_name, item_name):
         return redirect(url_for('showCategoryItems', category_name=category.name))
     else:
         return render_template('deleteItem.html', item=deletingItem)
+
+# Edit item image
+@app.route('/catalog/<category_name>/<item_name>/editimage', methods=['GET','POST'])
+@login_required
+def editImage(category_name, item_name):
+    category = session.query(Category).filter_by(name=category_name).one()
+    editingItem = session.query(Item).filter_by(name=item_name, category=category).one()
+
+    if editingItem.user_id != login_session['user_id']:
+        return "<script>function myFunction() {alert('You are not authorized to edit this item. Please create your own item " \
+               "in order to edit.');}</script><body onload='myFunction()'>"
+
+    """Save edited image to the database"""
+    if request.method == 'POST':
+        if request.form['image']:
+            editingItem.image = request.form['image']
+            session.add(editingItem)
+            session.commit()
+            return redirect(url_for('showItem', category_name=category.name, item_name=editingItem.name))
+    else:
+        return render_template('editImage.html', item=editingItem)
+
+# Delete item image
+@app.route('/catalog/<category_name>/<item_name>/deleteimage', methods=['GET','POST'])
+@login_required
+def deleteImage(category_name, item_name):
+    category = session.query(Category).filter_by(name=category_name).one()
+    editingItem = session.query(Item).filter_by(name=item_name, category=category).one()
+
+    """Prevent logged-in user to delete item image which belongs to other user"""
+    if editingItem.user_id != login_session['user_id']:
+        return "<script>function myFunction() {alert('You are not authorized to delete this item. Please create your own item " \
+               "in order to delete.');}</script><body onload='myFunction()'>"
+
+    """Delete item image"""
+    if request.method == 'POST':
+        editingItem.image = url_for('static', filename='img_not_available.png')
+        session.add(editingItem)
+        session.commit()
+        return redirect(url_for('showItem', category_name=category.name, item_name=editingItem.name))
+    else:
+        return render_template('deleteImage.html', item=editingItem)
+
 
 
 
