@@ -76,7 +76,7 @@ def gconnect():
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     h = httplib2.Http()
-    result = json.loads(h.request(url, 'GET')[1])
+    result = json.loads(h.request(url, 'GET')[1].decode("utf8"))
     # If there was an error in the access token info, abort.
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
@@ -218,7 +218,7 @@ def categoriesJSON():
     return jsonify(Categories = [c.serialize for c in categories])
 
 # API endpoints for all items of a specific category.
-@app.route('/<category_name>/items.json')
+@app.route('/catalog/<category_name>/items.json')
 def itemsJSON(category_name):
     category = session.query(Category).filter_by(name=category_name).one()
     items = session.query(Item).filter_by(category=category).all()
