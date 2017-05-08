@@ -234,22 +234,28 @@ def showHome():
     categories = session.query(Category).order_by(asc(Category.name))
     items = session.query(Item).order_by(desc(Item.createdDate))
     if 'username' not in login_session:
-        return render_template('publichome.html', categories=categories, items=items)
+        return render_template('publichome.html',
+								categories=categories,
+								items=items)
     else:
-        return render_template('home.html', categories=categories, items=items)
+        return render_template('home.html',
+								categories=categories,
+								items=items)
 
 # Show user info
 @app.route('/user/<username>/<email>')
 def showUser(username,email):
-    user = session.query(User).filter_by(name=username, email=email).one()
-    return render_template('showUser.html', user=user)
+    user = session.query(User).filter_by(name=username,email=email).one()
+    return render_template('showUser.html',
+							user=user)
 
 # Add a new category
 @app.route('/catalog/newcategory', methods=['GET','POST'])
 @login_required
 def newCategory():
     if request.method == 'POST':
-        addingCategory = Category(name=request.form['name'], user_id=login_session['user_id'])
+        addingCategory = Category(name=request.form['name'],
+								user_id=login_session['user_id'])
         session.add(addingCategory)
         session.commit()
         return redirect(url_for('showHome'))
@@ -264,9 +270,12 @@ def editCategory(category_name):
 
     """Prevent logged-in user to edit other user's category"""
     if categoryToEdit.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to edit this category. Please create your own " \
-               "category " \
-               "in order to edit.');}</script><body onload='myFunction()'>"
+        return ("<script>function myFunction() {alert('You are not"
+				"authorized to edit this category. Please create"
+				"your own " \
+				"category " \
+				"in order to edit.');}</script>"
+				"<body onload='myFunction()'>")
 
     """Save edited category to the database"""
     if request.method == 'POST':
@@ -275,7 +284,8 @@ def editCategory(category_name):
         session.commit()
         return redirect(url_for('showHome'))
     else:
-        return render_template('editCategory.html', category=categoryToEdit)
+        return render_template('editCategory.html',
+								category=categoryToEdit)
 
 # Delete a category
 @app.route('/catalog/<category_name>/delete', methods=['GET','POST'])
@@ -285,9 +295,12 @@ def deleteCategory(category_name):
 
     """Prevent logged-in user to delete other user's category"""
     if categoryToDelete.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to delete this category. Please create your own " \
-               "category " \
-               "in order to delete.');}</script><body onload='myFunction()'>"
+        return ("<script>function myFunction() {alert('You are not"
+				"authorized to delete this category. Please create"
+				"your own " \
+				"category " \
+				"in order to delete.');}</script>"
+				"<body onload='myFunction()'>")
 
     """Delete category from the database"""
     if request.method == 'POST':
@@ -295,30 +308,48 @@ def deleteCategory(category_name):
         session.commit()
         return redirect(url_for('showHome'))
     else:
-        return render_template('deleteCategory.html', category=categoryToDelete)
+        return render_template('deleteCategory.html',
+								category=categoryToDelete)
 
 # Show all items in a category
 @app.route('/catalog/<category_name>/items')
 def showCategoryItems(category_name):
     categories = session.query(Category).order_by(asc(Category.name))
-    chosenCategory = session.query(Category).filter_by(name=category_name).one()
-    items = session.query(Item).filter_by(category_id=chosenCategory.id).order_by(asc(Item.name))
+    chosenCategory = (session.query(Category)
+    				.filter_by(name=category_name).one())
+    items = (session.query(Item)
+            .filter_by(category_id=chosenCategory.id)
+            .order_by(asc(Item.name)))
     creator = getUserInfo(chosenCategory.user_id)
-    if 'username' not in login_session or creator.id != login_session['user_id']:
-        return render_template('publicCategoryItems.html', categories=categories, chosenCategory=chosenCategory, items=items)
+    if ('username' not in login_session 
+    	or creator.id != login_session['user_id']):
+        return render_template('publicCategoryItems.html',
+								categories=categories, 
+								chosenCategory=chosenCategory,
+								items=items)
     else:
-        return render_template('showCategoryItems.html', categories=categories, chosenCategory=chosenCategory, items=items)
+        return render_template('showCategoryItems.html', 
+								categories=categories, 
+								chosenCategory=chosenCategory, 
+								items=items)
 
 # Show information of a specific item
 @app.route('/catalog/<category_name>/<item_name>')
 def showItem(category_name, item_name):
-    category = session.query(Category).filter_by(name=category_name).one()
-    item = session.query(Item).filter_by(name=item_name, category=category).one()
+    category = (session.query(Category)
+				.filter_by(name=category_name).one())
+    item = (session.query(Item)
+			.filter_by(name=item_name, 
+			category=category).one())
     creator = getUserInfo(item.user_id)
-    if 'username' not in login_session or creator.id != login_session['user_id']:
-        return render_template('publicitems.html', item=item)
+    if ('username' not in login_session 
+    	or creator.id != login_session['user_id']):
+        return render_template('publicitems.html', 
+								item=item)
     else:
-        return render_template('showItem.html', item=item, creator=creator)
+        return render_template('showItem.html',
+								item=item, 
+								creator=creator)
 
 # Add a new item
 @app.route('/catalog/newitem', methods=['GET','POST'])
@@ -328,32 +359,43 @@ def newItem():
     if request.method == 'POST':
         itemName = request.form['name']
         itemDescription = request.form['description']
-        itemCategory = session.query(Category).filter_by(name=request.form['category']).one()
+        itemCategory = (session.query(Category)
+        .filter_by(name=request.form['category']).one())
         itemImage = request.form['image']
         if itemName != '':
             print "item name %s" % itemName
-            addingItem = Item(name=itemName, description=itemDescription, image=itemImage, category=itemCategory,
-                              user_id=itemCategory.user_id)
+            addingItem = Item(name=itemName, 
+				description=itemDescription, 
+				image=itemImage, 
+				category=itemCategory, 
+				user_id=itemCategory.user_id)
             session.add(addingItem)
             session.commit()
             return redirect(url_for('showHome'))
         else:
-            return render_template('newItem.html', categories=categories)
+            return render_template('newItem.html', 
+									categories=categories)
     else:
-        return render_template('newItem.html', categories=categories)
+        return render_template('newItem.html', 
+								categories=categories)
 
 # Edit an item
 @app.route('/catalog/<category_name>/<item_name>/edit', methods=['GET','POST'])
 @login_required
 def editItem(category_name, item_name):
     categories = session.query(Category).order_by(asc(Category.name))
-    editingItemCategory = session.query(Category).filter_by(name=category_name).one()
-    editingItem = session.query(Item).filter_by(name=item_name, category=editingItemCategory).one()
+    editingItemCategory = (session.query(Category).filter_by(name=category_name).one())
+    editingItem = (session.query(Item)
+    				.filter_by(name=item_name, 
+    				category=editingItemCategory).one())
 
     """Prevent logged-in user to edit item which belongs to other user"""
     if editingItem.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to edit this item. Please create your own item " \
-               "in order to edit.');}</script><body onload='myFunction()'>"
+        return ("<script>function myFunction()" 
+					"{alert('You are not authorized to edit this item."
+					"Please create your own item " \
+					"in order to edit.');}</script>"
+					"<body onload='myFunction()'>")
 
     """Save edited item to the database"""
     if request.method == 'POST':
@@ -365,9 +407,14 @@ def editItem(category_name, item_name):
             editingItem.category = session.query(Category).filter_by(name=request.form['category']).one()
         session.add(editingItem)
         session.commit()
-        return redirect(url_for('showItem', category_name=editingItemCategory.name, item_name=editingItem.name))
+        return redirect(url_for('showItem', 
+				category_name=editingItemCategory.name, 
+				item_name=editingItem.name))
     else:
-        return render_template('editItem.html', categories=categories, editingItemCategory=editingItemCategory, item=editingItem)
+        return render_template('editItem.html', 
+								categories=categories, 
+								editingItemCategory=editingItemCategory,
+								item=editingItem)
 
 # Delete an item
 @app.route('/catalog/<category_name>/<item_name>/delete', methods=['GET','POST'])
@@ -377,16 +424,21 @@ def deleteItem(category_name, item_name):
     deletingItem = session.query(Item).filter_by(name=item_name, category=category).one()
 
     if deletingItem.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to delete this item. Please create your own item " \
-               "in order to delete.');}</script><body onload='myFunction()'>"
+        return ("<script>function myFunction() "
+				"{alert('You are not authorized to delete this item."
+				" Please create your own item " \
+				"in order to delete.');}</script>"
+				"<body onload='myFunction()'>")
 
     """Delete item from the database"""
     if request.method == 'POST':
         session.delete(deletingItem)
         session.commit()
-        return redirect(url_for('showCategoryItems', category_name=category.name))
+        return redirect(url_for('showCategoryItems', 
+								category_name=category.name))
     else:
-        return render_template('deleteItem.html', item=deletingItem)
+        return render_template('deleteItem.html', 
+								item=deletingItem)
 
 # Edit item image
 @app.route('/catalog/<category_name>/<item_name>/editimage', methods=['GET','POST'])
@@ -396,8 +448,11 @@ def editImage(category_name, item_name):
     editingItem = session.query(Item).filter_by(name=item_name, category=category).one()
 
     if editingItem.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to edit this item. Please create your own item " \
-               "in order to edit.');}</script><body onload='myFunction()'>"
+        return ("<script>function myFunction() "
+				"{alert('You are not authorized to edit this item."
+				" Please create your own item " \
+				"in order to edit.');}</script>"
+				"<body onload='myFunction()'>")
 
     """Save edited image to the database"""
     if request.method == 'POST':
@@ -405,9 +460,12 @@ def editImage(category_name, item_name):
             editingItem.image = request.form['image']
             session.add(editingItem)
             session.commit()
-            return redirect(url_for('showItem', category_name=category.name, item_name=editingItem.name))
+            return redirect(url_for('showItem', 
+									category_name=category.name, 
+									item_name=editingItem.name))
     else:
-        return render_template('editImage.html', item=editingItem)
+        return render_template('editImage.html',
+								item=editingItem)
 
 # Delete item image
 @app.route('/catalog/<category_name>/<item_name>/deleteimage', methods=['GET','POST'])
@@ -418,15 +476,20 @@ def deleteImage(category_name, item_name):
 
     """Prevent logged-in user to delete item image which belongs to other user"""
     if editingItem.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to delete this item. Please create your own item " \
-               "in order to delete.');}</script><body onload='myFunction()'>"
+        return ("<script>function myFunction() "
+				"{alert('You are not authorized to delete this item."
+				" Please create your own item " \
+				"in order to delete.');}</script>"
+				"<body onload='myFunction()'>")
 
     """Delete item image"""
     if request.method == 'POST':
         editingItem.image = url_for('static', filename='img_not_available.png')
         session.add(editingItem)
         session.commit()
-        return redirect(url_for('showItem', category_name=category.name, item_name=editingItem.name))
+        return redirect(url_for('showItem', 
+								category_name=category.name, 
+								item_name=editingItem.name))
     else:
         return render_template('deleteImage.html', item=editingItem)
 
