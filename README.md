@@ -1,4 +1,4 @@
-# Item Catalog Project Project
+# Item Catalog Project
 **Author:** Rigoberto Gort
 **Date:** 05/01/2017
 
