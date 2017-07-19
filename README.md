@@ -1,4 +1,4 @@
-# Movie Trailer Project
+# Item Catalog Project Project
 **Author:** Rigoberto Gort
 **Date:** 05/01/2017
 
